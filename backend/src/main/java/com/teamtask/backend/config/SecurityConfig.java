@@ -36,7 +36,7 @@ public class SecurityConfig {
         // Allow your React app
 //        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
 
-        // for live host or deploy on the render or our website 
+        // for live host or deploy on the render or our website
         configuration.setAllowedOrigins(Arrays.asList("https://teamtask-frontend-feqd.onrender.com"));
         // Allow all standard methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
@@ -56,11 +56,11 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // MUST stay enabled for React
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        // Broaden this to cover /api/projects AND /api/projects/123
+                        .requestMatchers("/api/projects/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/projects/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/tasks/project/**").hasRole("ADMIN")
-                        .requestMatchers("/api/tasks/my-tasks").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/api/tasks/*/status").authenticated()
-                        .requestMatchers("/api/projects").authenticated()
+                        .requestMatchers("/api/tasks/**").authenticated()
                         .requestMatchers("/api/dashboard/**").authenticated()
                         .anyRequest().authenticated()
                 )

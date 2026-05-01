@@ -105,4 +105,8 @@ return projectMemberRepository.save(projectMember);
     public List<ProjectMember> getProjectMembers(Long projectId) {
         return projectMemberRepository.findByProjectId(projectId);
     }
+    public List<Project> findAll() {
+        // This calls the built-in JpaRepository method
+        return projectRepository.findAll();
+    }
 }

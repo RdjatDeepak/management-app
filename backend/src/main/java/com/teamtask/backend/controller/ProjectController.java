@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -24,8 +25,9 @@ public class ProjectController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Project>> getAllMyProjects() {
-        return ResponseEntity.ok(projectService.getMyProjects());
+    public ResponseEntity<List<Project>> getAllProjects() {
+        List<Project> projects = projectService.findAll();
+        return ResponseEntity.ok(projects != null ? projects : new ArrayList<>());
     }
 @PostMapping("/{projectId}/members")
     public ResponseEntity<ProjectMember> addMember(
