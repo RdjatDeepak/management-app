@@ -70,7 +70,11 @@ public class TaskService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Use the ID since your repo has findByAssignedToId
+// Use the ID since your repo has findByAssignedToId
         return taskRepository.findByAssignedToId(user.getId());
+    }
+
+    public List<Task> getTasksByProject(Long projectId) {
+        return taskRepository.findByProjectId(projectId);
     }
 }

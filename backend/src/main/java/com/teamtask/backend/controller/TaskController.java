@@ -22,9 +22,14 @@ public class TaskController {
         return ResponseEntity.ok(taskService.createTask(projectId, request));
     }
 
-    @GetMapping("/my-tasks")
+@GetMapping("/my-tasks")
     public ResponseEntity<List<Task>> getMyTasks() {
         return ResponseEntity.ok(taskService.getMyTasks());
+    }
+
+    @GetMapping("/project/{projectId}")
+    public ResponseEntity<List<Task>> getByProject(@PathVariable Long projectId) {
+        return ResponseEntity.ok(taskService.getTasksByProject(projectId));
     }
 
     @PatchMapping("/{taskId}/status")

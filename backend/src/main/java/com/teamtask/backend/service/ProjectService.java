@@ -39,12 +39,23 @@ public class ProjectService {
         return projectRepository.save(project);
     }
 
-    public List<Project> getMyProjects() {
+public List<Project> getMyProjects() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return projectRepository.findByAdmin(currentUser);
+        // Get projects where user is admin
+        List<Project> adminProjects = projectRepository.findByAdmin(currentUser);
+        
+        // Get projects where user is a member
+        List<ProjectMember> memberships = projectMemberRepository.findByUserId(currentUser.getId());
+        List<Project> memberProjects = memberships.stream()
+                .map(pm -> pm.getProject())
+                .toList();
+        
+        // Combine and remove duplicates
+        adminProjects.addAll(memberProjects);
+        return adminProjects;
     }
 
     @Transactional
@@ -83,6 +94,15 @@ public class ProjectService {
         projectMember.setCanCreateTasks(request.isCanCreateTasks());
         projectMember.setCanUpdateStatus(request.isCanUpdateStatus());
 
-        return projectMemberRepository.save(projectMember);
+return projectMemberRepository.save(projectMember);
+    }
+
+    public Project getProjectById(Long projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+    }
+
+    public List<ProjectMember> getProjectMembers(Long projectId) {
+        return projectMemberRepository.findByProjectId(projectId);
     }
 }

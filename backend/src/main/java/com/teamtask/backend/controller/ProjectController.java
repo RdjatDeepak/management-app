@@ -27,10 +27,20 @@ public class ProjectController {
     public ResponseEntity<List<Project>> getAllMyProjects() {
         return ResponseEntity.ok(projectService.getMyProjects());
     }
-    @PostMapping("/{projectId}/members")
+@PostMapping("/{projectId}/members")
     public ResponseEntity<ProjectMember> addMember(
             @PathVariable Long projectId,
             @RequestBody AddMemberRequest request) {
         return ResponseEntity.ok(projectService.addMemberToProject(projectId, request));
+    }
+
+    @GetMapping("/{projectId}")
+    public ResponseEntity<Project> getById(@PathVariable Long projectId) {
+        return ResponseEntity.ok(projectService.getProjectById(projectId));
+    }
+
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<List<ProjectMember>> getMembers(@PathVariable Long projectId) {
+        return ResponseEntity.ok(projectService.getProjectMembers(projectId));
     }
 }
