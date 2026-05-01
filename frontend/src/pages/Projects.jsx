@@ -15,16 +15,26 @@ const Projects = () => {
 
   const isAdmin = user?.role === 'ROLE_ADMIN';
 
-  useEffect(() => {
+ useEffect(() => {
     fetchProjects();
   }, []);
-
+  
   const fetchProjects = async () => {
+    setLoading(true);
     try {
       const response = await projectAPI.getAll();
-      setProjects(response.data);
+      
+      // ✅ Safety check: Ensure the response is actually an array
+      if (Array.isArray(response.data)) {
+        setProjects(response.data);
+      } else {
+        console.error('Expected array but received:', response.data);
+        setProjects([]); // Fallback to empty list to prevent .map errors
+      }
     } catch (err) {
-      setError('Failed to fetch projects');
+      console.error('Fetch error:', err);
+      setError('Failed to fetch projects. Please check your connection.');
+      setProjects([]); 
     } finally {
       setLoading(false);
     }
