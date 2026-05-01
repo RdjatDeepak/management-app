@@ -79,20 +79,22 @@ const MyTasks = () => {
     return <div className="loading">Loading tasks...</div>;
   }
 
-  return (
+return (
     <div className="my-tasks-page">
       <header className="page-header">
-        <div>
-          <h1>My Tasks</h1>
-          <p className="page-subtitle">View and manage your assigned tasks</p>
+        <div className="header-left">
+          <div>
+            <h1>My Tasks</h1>
+            <p className="page-subtitle">View and manage your assigned tasks</p>
+          </div>
         </div>
       </header>
 
-      {/* Task Summary */}
+      {/* Task Summary Cards - Shows task status overview */}
       <div className="task-summary">
         <div className="summary-card" onClick={() => setFilter('ALL')}>
           <div className="summary-value">{tasks.length}</div>
-          <div className="summary-label">Total</div>
+          <div className="summary-label">Total Tasks</div>
         </div>
         <div className="summary-card todo" onClick={() => setFilter('TODO')}>
           <div className="summary-value">{todoTasks.length}</div>

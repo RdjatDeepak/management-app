@@ -52,16 +52,20 @@ const Projects = () => {
   return (
     <div className="projects-page">
       <header className="page-header">
-        <div>
-          <h1>Projects</h1>
-          <p className="page-subtitle">Manage your team projects</p>
+        <div className="header-left">
+          <div>
+            <h1>Projects</h1>
+            <p className="page-subtitle">Manage your team projects</p>
+          </div>
         </div>
-        {isAdmin && (
-          <button className="btn-primary" onClick={() => setShowModal(true)}>
-            <Plus size={18} />
-            New Project
-          </button>
-        )}
+        <div className="header-actions">
+          {isAdmin && (
+            <button className="btn-primary" onClick={() => setShowModal(true)}>
+              <Plus size={18} />
+              Create New Project
+            </button>
+          )}
+        </div>
       </header>
 
       {error && <div className="error-banner">{error}</div>}

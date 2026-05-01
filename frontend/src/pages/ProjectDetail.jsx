@@ -108,11 +108,14 @@ const fetchProjectData = async () => {
     }
   };
 
-  const handleAddMember = async (e) => {
+const handleAddMember = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
       await projectAPI.addMember(projectId, newMember);
+      // Refresh the members list after adding a new member
+      const membersRes = await projectAPI.getMembers(projectId);
+      setMembers(membersRes.data || []);
       setShowMemberModal(false);
       setNewMember({
         email: '',
@@ -124,6 +127,7 @@ const fetchProjectData = async () => {
       });
     } catch (err) {
       console.error('Failed to add member:', err);
+      alert(err.response?.data?.message || 'Failed to add member. Only the project admin can add members.');
     } finally {
       setSaving(false);
     }
@@ -178,8 +182,9 @@ const fetchProjectData = async () => {
     );
   }
 
-  return (
+return (
     <div className="project-detail-page">
+      {/* Page Header with navigation and action buttons */}
       <header className="page-header">
         <div className="header-left">
           <Link to="/" className="back-link">
@@ -187,26 +192,28 @@ const fetchProjectData = async () => {
           </Link>
           <div>
             <h1>{project.name}</h1>
-            <p className="page-subtitle">{project.description || 'No description'}</p>
+            <p className="page-subtitle">{project.description || 'Manage tasks and team members'}</p>
           </div>
         </div>
-<div className="header-actions">
+        <div className="header-actions">
+          {/* Add Member Button - Only visible to project admin */}
           {isProjectAdmin && (
             <button className="btn-secondary" onClick={() => setShowMemberModal(true)}>
               <Users size={18} />
-              Add Member
+              Add Team Member
             </button>
           )}
+          {/* Add Task Button - Only visible to project admin */}
           {isProjectAdmin && (
             <button className="btn-primary" onClick={() => setShowTaskModal(true)}>
               <Plus size={18} />
-              Add Task
+              Create New Task
             </button>
           )}
         </div>
       </header>
 
-      {/* Stats Cards */}
+      {/* Stats Overview Cards */}
       {stats && (
         <div className="stats-grid">
           <div className="stat-card">
@@ -232,21 +239,21 @@ const fetchProjectData = async () => {
         </div>
       )}
 
-{/* Tabs */}
+      {/* Navigation Tabs */}
       <div className="tabs">
         <button 
           className={`tab ${activeTab === 'tasks' ? 'active' : ''}`}
           onClick={() => setActiveTab('tasks')}
         >
           <CheckSquare size={18} />
-          Tasks
+          View Tasks
         </button>
         <button 
           className={`tab`}
           onClick={handleNavigateToDashboard}
         >
           <BarChart3 size={18} />
-          Dashboard
+          View Dashboard
         </button>
       </div>
 

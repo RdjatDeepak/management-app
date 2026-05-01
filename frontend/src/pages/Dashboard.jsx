@@ -3,15 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dashboardAPI } from '../services/api';
 import { 
-  BarChart3, 
-  Users, 
-  CheckCircle, 
-  Clock, 
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  Clock,
   Circle,
   AlertTriangle,
-  ArrowLeft,
-  TrendingUp,
-  Activity
+  User,
+  FileText,
+  MoreVertical
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -20,7 +20,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [project, setProject] = useState(null);
+  const [expandedUser, setExpandedUser] = useState(null);
 
   const isAdmin = user?.role === 'ROLE_ADMIN';
 
@@ -32,10 +32,6 @@ const Dashboard = () => {
     try {
       const response = await dashboardAPI.getStats(projectId);
       setStats(response.data);
-      // Set project info from the response (we need to get project details too)
-      if (response.data) {
-        setProject({ id: projectId });
-      }
     } catch (err) {
       console.error('Failed to fetch dashboard:', err);
     } finally {
@@ -45,11 +41,39 @@ const Dashboard = () => {
 
   const formatDate = (date) => {
     if (!date) return 'No due date';
-    return new Date(date).toLocaleDateString();
+    const d = new Date(date);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'DONE': return 'status-done';
+      case 'IN_PROGRESS': return 'status-progress';
+      case 'TODO': return 'status-todo';
+      default: return 'status-todo';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'DONE': return <CheckCircle size={14} />;
+      case 'IN_PROGRESS': return <Clock size={14} />;
+      case 'TODO': return <Circle size={14} />;
+      default: return <Circle size={14} />;
+    }
+  };
+
+const toggleUserExpand = (userEmail) => {
+    setExpandedUser(expandedUser === userEmail ? null : userEmail);
   };
 
   if (loading) {
-    return <div className="loading">Loading dashboard...</div>;
+    return (
+      <div className="dashboard-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading dashboard...</p>
+      </div>
+    );
   }
 
   if (!stats) {
@@ -70,9 +94,6 @@ const Dashboard = () => {
   const todoCount = stats.tasksByStatus?.TODO || 0;
   const completionRate = totalTasks > 0 ? Math.round((doneCount / totalTasks) * 100) : 0;
 
-  // User-specific data (for members)
-  const userTasks = stats.tasksPerUser ? Object.entries(stats.tasksPerUser) : [];
-
   return (
     <div className="dashboard-page">
       <header className="page-header">
@@ -83,154 +104,182 @@ const Dashboard = () => {
           <div>
             <h1>Dashboard</h1>
             <p className="page-subtitle">
-              {isAdmin ? 'Project Overview' : 'My Performance'}
+              {isAdmin ? 'Project Overview & Team Performance' : 'My Performance'}
             </p>
           </div>
         </div>
       </header>
 
-      {/* Overview Stats */}
-      <div className="dashboard-overview">
-        <div className="overview-card main">
-          <div className="overview-icon">
-            <Activity size={24} />
+      {/* Stats Overview Cards */}
+      <div className="stats-overview">
+        <div className="stat-card stat-total">
+          <div className="stat-icon">
+            <FileText size={20} />
           </div>
-          <div className="overview-content">
-            <div className="overview-value">{totalTasks}</div>
-            <div className="overview-label">Total Tasks</div>
+          <div className="stat-content">
+            <span className="stat-value">{totalTasks}</span>
+            <span className="stat-label">Total Tasks</span>
           </div>
-          <div className="overview-progress">
-            <div className="progress-ring">
-              <svg viewBox="0 0 36 36">
-                <path
-                  className="progress-ring-bg"
-                  d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <path
-                  className="progress-ring-fill"
-                  strokeDasharray={`${completionRate}, 100`}
-                  d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-              </svg>
-              <div className="progress-text">{completionRate}%</div>
-            </div>
+          <div className="stat-progress-ring">
+            <svg viewBox="0 0 36 36">
+              <path
+                className="ring-bg"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path
+                className="ring-fill"
+                strokeDasharray={`${completionRate}, 100`}
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+            </svg>
+            <span className="ring-percent">{completionRate}%</span>
           </div>
         </div>
 
-        <div className="overview-card done">
-          <div className="overview-icon">
-            <CheckCircle size={24} />
+        <div className="stat-card stat-done">
+          <div className="stat-icon">
+            <CheckCircle size={20} />
           </div>
-          <div className="overview-content">
-            <div className="overview-value">{doneCount}</div>
-            <div className="overview-label">Completed</div>
-          </div>
-        </div>
-
-        <div className="overview-card progress">
-          <div className="overview-icon">
-            <Clock size={24} />
-          </div>
-          <div className="overview-content">
-            <div className="overview-value">{inProgressCount}</div>
-            <div className="overview-label">In Progress</div>
+          <div className="stat-content">
+            <span className="stat-value">{doneCount}</span>
+            <span className="stat-label">Completed</span>
           </div>
         </div>
 
-        <div className="overview-card todo">
-          <div className="overview-icon">
-            <Circle size={24} />
+        <div className="stat-card stat-progress">
+          <div className="stat-icon">
+            <Clock size={20} />
           </div>
-          <div className="overview-content">
-            <div className="overview-value">{todoCount}</div>
-            <div className="overview-label">To Do</div>
+          <div className="stat-content">
+            <span className="stat-value">{inProgressCount}</span>
+            <span className="stat-label">In Progress</span>
           </div>
         </div>
 
-        <div className="overview-card overdue">
-          <div className="overview-icon">
-            <AlertTriangle size={24} />
+        <div className="stat-card stat-todo">
+          <div className="stat-icon">
+            <Circle size={20} />
           </div>
-          <div className="overview-content">
-            <div className="overview-value">{stats.overdueTasks || 0}</div>
-            <div className="overview-label">Overdue</div>
+          <div className="stat-content">
+            <span className="stat-value">{todoCount}</span>
+            <span className="stat-label">To Do</span>
+          </div>
+        </div>
+
+        <div className="stat-card stat-overdue">
+          <div className="stat-icon">
+            <AlertTriangle size={20} />
+          </div>
+          <div className="stat-content">
+            <span className="stat-value">{stats.overdueTasks || 0}</span>
+            <span className="stat-label">Overdue</span>
           </div>
         </div>
       </div>
 
-      {/* Tasks by Status - Visual Chart */}
-      <div className="dashboard-section">
-        <h2>
-          <TrendingUp size={20} />
-          Tasks by Status
-        </h2>
-        <div className="status-chart">
-          <div className="chart-row">
-            <div className="chart-label">To Do</div>
-            <div className="chart-bar-container">
-              <div 
-                className="chart-bar todo"
-                style={{ width: `${totalTasks > 0 ? (todoCount / totalTasks) * 100 : 0}%` }}
-              />
-            </div>
-            <div className="chart-value">{todoCount}</div>
-          </div>
-          <div className="chart-row">
-            <div className="chart-label">In Progress</div>
-            <div className="chart-bar-container">
-              <div 
-                className="chart-bar progress"
-                style={{ width: `${totalTasks > 0 ? (inProgressCount / totalTasks) * 100 : 0}%` }}
-              />
-            </div>
-            <div className="chart-value">{inProgressCount}</div>
-          </div>
-          <div className="chart-row">
-            <div className="chart-label">Done</div>
-            <div className="chart-bar-container">
-              <div 
-                className="chart-bar done"
-                style={{ width: `${totalTasks > 0 ? (doneCount / totalTasks) * 100 : 0}%` }}
-              />
-            </div>
-            <div className="chart-value">{doneCount}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Team Performance - Admin Only */}
-      {isAdmin && stats.tasksPerUser && (
+      {/* Team Tasks Table - Admin Only */}
+      {isAdmin && stats.userTasks && stats.userTasks.length > 0 && (
         <div className="dashboard-section">
-          <h2>
-            <Users size={20} />
+          <h2 className="section-title">
+            <User size={20} />
             Team Performance
           </h2>
-          <div className="team-grid">
-            {Object.entries(stats.tasksPerUser).map(([userName, taskCount]) => (
-              <div key={userName} className="team-card">
-                <div className="team-avatar">
-                  {userName.charAt(0).toUpperCase()}
-                </div>
-                <div className="team-info">
-                  <div className="team-name">{userName}</div>
-                  <div className="team-tasks">{taskCount} tasks</div>
-                </div>
-                <div className="team-stat">
-                  {taskCount > 0 ? (
-                    <span className="stat-badge active">
-                      <Activity size={14} />
-                      Active
-                    </span>
-                  ) : (
-                    <span className="stat-badge idle">Idle</span>
-                  )}
-                </div>
-              </div>
-            ))}
+          
+          <div className="team-table-container">
+            <table className="team-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Total Tasks</th>
+                  <th>Completed</th>
+                  <th>In Progress</th>
+                  <th>To Do</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.userTasks.map((userData, index) => (
+                  <>
+                    <tr 
+                      key={userData.userEmail} 
+                      className={`user-row ${expandedUser === userData.userEmail ? 'expanded' : ''}`}
+                      onClick={() => toggleUserExpand(userData.userEmail)}
+                    >
+                      <td>
+                        <div className="member-cell">
+                          <div className="member-avatar">
+                            {userData.userName.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="member-info">
+                            <span className="member-name">{userData.userName}</span>
+                            <span className="member-email">{userData.userEmail}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span className="task-count">{userData.totalTasks}</span></td>
+                      <td>
+                        <span className="count-badge done">{userData.completedTasks}</span>
+                      </td>
+                      <td>
+                        <span className="count-badge progress">{userData.inProgressTasks}</span>
+                      </td>
+                      <td>
+                        <span className="count-badge todo">{userData.todoTasks}</span>
+                      </td>
+                      <td>
+                        <button className="expand-btn">
+                          <MoreVertical size={16} />
+                          <span>{expandedUser === userData.userEmail ? 'Hide' : 'View'} Tasks</span>
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedUser === userData.userEmail && (
+                      <tr className="expanded-row">
+                        <td colSpan={6}>
+                          <div className="tasks-detail">
+                            <table className="tasks-inner-table">
+                              <thead>
+                                <tr>
+                                  <th>Task Title</th>
+                                  <th>Status</th>
+                                  <th>Due Date</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {userData.tasks.map((task) => (
+                                  <tr key={task.taskId}>
+                                    <td>
+                                      <div className="task-title-cell">
+                                        <span className="task-title">{task.title}</span>
+                                        {task.description && (
+                                          <span className="task-desc">{task.description}</span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span className={`status-badge ${getStatusColor(task.status)}`}>
+                                        {getStatusIcon(task.status)}
+                                        {task.status.replace('_', ' ')}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <div className="due-date-cell">
+                                        <Calendar size={14} />
+                                        <span>{formatDate(task.dueDate)}</span>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -238,24 +287,36 @@ const Dashboard = () => {
       {/* Member View - Personal Stats */}
       {!isAdmin && (
         <div className="dashboard-section">
-          <h2>
-            <BarChart3 size={20} />
+          <h2 className="section-title">
+            <User size={20} />
             My Performance
           </h2>
-          <div className="member-stats">
-            <div className="stat-item">
-              <div className="stat-number">{totalTasks}</div>
-              <div className="stat-desc">Total tasks assigned</div>
+          <div className="member-performance-grid">
+            <div className="perf-card">
+              <div className="perf-value">{totalTasks}</div>
+              <div className="perf-label">Total Tasks Assigned</div>
             </div>
-            <div className="stat-item">
-              <div className="stat-number highlight">{completionRate}%</div>
-              <div className="stat-desc">Completion rate</div>
+            <div className="perf-card highlight">
+              <div className="perf-value">{completionRate}%</div>
+              <div className="perf-label">Completion Rate</div>
             </div>
-            <div className="stat-item">
-              <div className="stat-number warning">{stats.overdueTasks || 0}</div>
-              <div className="stat-desc">Overdue tasks</div>
+            <div className="perf-card warning">
+              <div className="perf-value">{stats.overdueTasks || 0}</div>
+              <div className="perf-label">Overdue Tasks</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Empty State for Admin */}
+      {isAdmin && (!stats.userTasks || stats.userTasks.length === 0) && (
+        <div className="empty-state">
+          <User size={48} />
+          <h3>No Team Members</h3>
+          <p>Add members to your project to see their performance here.</p>
+          <Link to={`/projects/${projectId}`} className="btn-primary">
+            Go to Project
+          </Link>
         </div>
       )}
     </div>
